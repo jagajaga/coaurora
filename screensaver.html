@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>coaurora</title>
+<!-- Bare fullscreen aurora — made for WebViewScreenSaver and kiosk displays. -->
+<style>
+  html { background:#050604; }
+  html, body { margin:0; height:100%; overflow:hidden; cursor:none; }
+</style>
+</head>
+<body>
+<script type="module">
+  import { aurora, presets } from './src/index.js';
+  aurora(document.body, { ...presets.jagajaga });
+</script>
+</body>
+</html>
