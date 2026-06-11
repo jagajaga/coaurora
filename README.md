@@ -8,7 +8,7 @@ Zero dependencies · ~6 KB · WebGL2 two-pass renderer with a Canvas-2D fallback
 
 [**Live demo →**](https://jagajaga.me/coaurora/)
 
-<a href="https://jagajaga.me/coaurora/"><img src="demo.gif" alt="coaurora — drifting green aurora curtains, rendered by coaurora itself" width="400"></a>
+<a href="https://jagajaga.me/coaurora/"><img src="demo.gif" alt="coaurora — drifting green aurora curtains, rendered by coaurora itself" width="200"></a>
 
 </div>
 
