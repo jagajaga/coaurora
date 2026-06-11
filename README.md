@@ -110,6 +110,16 @@ Smooth dark gradients band on 8-bit displays. coaurora fixes it the way signal t
 
 ---
 
+## Bonus: the screensaver
+
+The aurora turned out to be a pretty good screensaver — so it's also one. Native
+**macOS** (Swift + Metal, rendering at 16-bit float with an extended-sRGB
+colorspace: a true 10-bit+ path no browser allows) and **Windows** (`.scr`,
+C + OpenGL, running the web shader near-verbatim). It lives on the
+[`screensaver` branch](https://github.com/jagajaga/coaurora/tree/screensaver),
+with prebuilt binaries on the
+[releases page](https://github.com/jagajaga/coaurora/releases).
+
 ## Notes
 
 - The canvas sits at `z-index:-1`, so keep your page's backdrop on `html` (or leave `body` transparent) — an opaque `body` background would paint over it.
