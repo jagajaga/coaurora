@@ -21,6 +21,8 @@ export interface AuroraOptions {
   resolutionCap?: number;
   /** Default `'auto'` (honours `prefers-reduced-motion`). */
   reducedMotion?: 'auto' | 'reduce' | 'no-preference';
+  /** CSS saturation boost on the canvas. Default 1. */
+  saturate?: number;
   /** Canvas `z-index`. Default -1. */
   zIndex?: number;
   /** Canvas opacity. Default 1. */

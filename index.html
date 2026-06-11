@@ -31,6 +31,10 @@
   .presets button { font:inherit; cursor:pointer; background:#15160f; color:var(--fg); border:1px solid #2a2c24;
     border-radius:6px; padding:.25rem .5rem; }
   .presets button:hover { border-color:var(--acc); }
+  .copy { display:block; width:100%; margin-top:.7rem; cursor:pointer; font:inherit; font-weight:600;
+    background:var(--acc); color:#04140a; border:0; border-radius:6px; padding:.42rem; }
+  .copy:hover { filter:brightness(1.08); }
+  .copy.ok { background:#15160f; color:var(--acc); border:1px solid var(--acc); }
 </style>
 </head>
 <body>
@@ -51,6 +55,7 @@
     <button data-p="ember">ember</button>
     <button data-p="violet">violet</button>
   </div>
+  <button id="copy" class="copy">copy settings</button>
 </aside>
 
 <main>
@@ -101,6 +106,27 @@ aurora()                       <span class="c">// this page, right now</span>
       if (p.tilt != null) $('tilt').value = p.tilt;
       if (p.thickness != null) $('thickness').value = p.thickness;
     });
+
+  // Copy the current settings as a ready-to-paste coaurora call.
+  $('copy').onclick = async () => {
+    const o = opts;
+    const snippet =
+`import { aurora } from 'coaurora';
+
+aurora({
+  curtains: ${o.curtains},
+  hue: [${o.hue[0]}, ${o.hue[1]}],
+  thickness: ${o.thickness},
+  speed: ${o.speed},
+  blur: ${o.blur},
+  tilt: ${o.tilt},
+  dither: ${o.dither},
+});`;
+    try { await navigator.clipboard.writeText(snippet); }
+    catch (e) { const t = document.createElement('textarea'); t.value = snippet; document.body.append(t); t.select(); document.execCommand('copy'); t.remove(); }
+    const btn = $('copy'); btn.textContent = 'copied ✓'; btn.classList.add('ok');
+    setTimeout(() => { btn.textContent = 'copy settings'; btn.classList.remove('ok'); }, 1400);
+  };
 </script>
 </body>
 </html>

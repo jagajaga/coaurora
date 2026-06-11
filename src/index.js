@@ -21,12 +21,13 @@ export const DEFAULTS = {
   fps: 30,                 // frame cap
   resolutionCap: 4.2e6,    // max rendered pixels (protects the GPU)
   reducedMotion: 'auto',   // 'auto' | 'reduce' | 'no-preference'
+  saturate: 1,             // CSS saturation boost on the canvas
   zIndex: -1,
   opacity: 1,
 };
 
 export const presets = {
-  jagajaga: { hue: [85, 165],  tilt: 22,  thickness: 0.6, floor: '#030503' }, // the green λ:j look
+  jagajaga: { hue: [85, 165],  tilt: 22,  thickness: 0.6, floor: '#030503', saturate: 1.35 }, // the green λ:j look
   ice:      { hue: [180, 225], tilt: -14, thickness: 0.7, floor: '#03060a' },
   ember:    { hue: [18, 52],   tilt: 18,  thickness: 0.8, floor: '#0a0402' },
   violet:   { hue: [250, 300], tilt: 30,  thickness: 0.5, floor: '#060309' },
@@ -50,7 +51,9 @@ export function aurora(target, options = {}) {
 
   const host = (typeof target === 'string' ? document.querySelector(target) : target) || document.body;
   const canvas = document.createElement('canvas');
+  const fx = () => { canvas.style.filter = opts.saturate !== 1 ? `saturate(${opts.saturate})` : ''; };
   Object.assign(canvas.style, { position: 'fixed', zIndex: String(opts.zIndex), opacity: String(opts.opacity), pointerEvents: 'none' });
+  fx();
 
   const place = () => {                                   // size + tilt the layer to fully cover after rotation
     const over = oversizeFor(opts.tilt), pct = over * 100, off = -(over - 1) * 50;
@@ -69,7 +72,7 @@ export function aurora(target, options = {}) {
   const stop = runGL(canvas, opts, env) || runCPU(canvas, opts, env);
 
   return {
-    set(patch) { Object.assign(opts, patch); if (patch.floor) opts._floor = toRGB(opts.floor); place(); },
+    set(patch) { Object.assign(opts, patch); if (patch.floor) opts._floor = toRGB(opts.floor); place(); fx(); },
     stop() { if (stop) stop(); removeEventListener('resize', place); canvas.remove(); },
     canvas,
   };
