@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>coaurora — an aurora background that is a Store comonad</title>
+<meta name="description" content="A WebGL aurora background that is, internally, a Store comonad. Zero dependencies." />
+<style>
+  :root { --fg:#e8efe4; --mut:#8c8f80; --acc:#3DDC7C; }
+  * { box-sizing:border-box; }
+  html { background:#040804; }                 /* backdrop on the root, so the z-index:-1 canvas shows */
+  html,body { margin:0; min-height:100vh; color:var(--fg);
+    font:16px/1.6 ui-monospace,"SF Mono",Menlo,Consolas,monospace; -webkit-font-smoothing:antialiased; }
+  main { max-width:44rem; margin-inline:auto; padding:clamp(3rem,9vw,7rem) 1.5rem 6rem; position:relative; }
+  h1 { font:600 clamp(2.6rem,1rem+9vw,5rem)/1 Georgia,serif; letter-spacing:-.02em; margin:0; }
+  .tag { color:var(--mut); margin:.6rem 0 2rem; }
+  pre { background:#0c0d0b; border:1px solid #20241c; border-radius:10px; padding:1rem 1.2rem; overflow-x:auto;
+    font-size:13px; color:#cdd8c4; box-shadow:0 16px 44px rgba(20,30,15,.25); }
+  .k { color:var(--acc); } .c { color:var(--mut); }
+  a { color:var(--acc); text-decoration:none; } a:hover { text-decoration:underline; }
+  .links { margin-top:1.5rem; display:flex; gap:1.25rem; flex-wrap:wrap; }
+
+  .panel { position:fixed; top:1rem; right:1rem; z-index:5; width:230px; max-width:calc(100vw - 2rem);
+    background:rgba(8,10,8,.72); backdrop-filter:blur(8px); border:1px solid #20241c; border-radius:12px;
+    padding:.85rem 1rem; font-size:12px; color:var(--fg); box-shadow:0 12px 40px rgba(0,0,0,.4); }
+  .panel h2 { font:600 11px/1 ui-monospace,monospace; letter-spacing:.18em; text-transform:uppercase; color:var(--acc); margin:0 0 .7rem; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:.6rem; margin:.45rem 0; }
+  .row label { color:var(--mut); }
+  input[type=range] { width:110px; accent-color:var(--acc); }
+  .presets { display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.7rem; }
+  .presets button { font:inherit; cursor:pointer; background:#15160f; color:var(--fg); border:1px solid #2a2c24;
+    border-radius:6px; padding:.25rem .5rem; }
+  .presets button:hover { border-color:var(--acc); }
+</style>
+</head>
+<body>
+
+<aside class="panel">
+  <h2>coaurora</h2>
+  <div class="row"><label>speed</label>     <input id="speed"     type="range" min="0"  max="3"   step="0.05" value="1"></div>
+  <div class="row"><label>tilt</label>      <input id="tilt"      type="range" min="-45" max="45"  step="1"    value="22"></div>
+  <div class="row"><label>thickness</label> <input id="thickness" type="range" min="0.2" max="1.6" step="0.05" value="0.6"></div>
+  <div class="row"><label>blur</label>      <input id="blur"      type="range" min="0"  max="4"   step="0.25" value="1.5"></div>
+  <div class="row"><label>hue lo</label>    <input id="huelo"     type="range" min="0"  max="360" step="1"    value="85"></div>
+  <div class="row"><label>hue hi</label>    <input id="huehi"     type="range" min="0"  max="360" step="1"    value="165"></div>
+  <div class="row"><label>curtains</label>  <input id="curtains"  type="range" min="3"  max="28"  step="1"    value="16"></div>
+  <div class="row"><label>dither</label>    <input id="dither"    type="checkbox" checked></div>
+  <div class="presets">
+    <button data-p="jagajaga">green</button>
+    <button data-p="ice">ice</button>
+    <button data-p="ember">ember</button>
+    <button data-p="violet">violet</button>
+  </div>
+</aside>
+
+<main>
+  <h1>coaurora</h1>
+  <p class="tag">An aurora background that is, internally, a <strong>Store comonad</strong>.</p>
+
+  <pre><span class="c">// the whole picture is a pipeline of comonadic extends</span>
+picture = <span class="k">extract</span> . <span class="k">extend</span> dither . <span class="k">extend</span> blur . <span class="k">extend</span> curtains $ positions
+
+<span class="c">// and a fragment shader IS that comonad — gl_FragCoord is the focus,</span>
+<span class="c">// the shader is `peek`, running it per-fragment is `extend`.</span></pre>
+
+  <pre><span class="k">import</span> { aurora } <span class="k">from</span> <span style="color:#9ff5bd">'coaurora'</span>
+aurora()                       <span class="c">// this page, right now</span>
+  .set({ tilt: 30, speed: 0.8 })</pre>
+
+  <div class="links">
+    <a href="https://github.com/jagajaga/coaurora">GitHub</a>
+    <a href="https://www.npmjs.com/package/coaurora">npm</a>
+    <a href="https://jagajaga.me">jagajaga.me</a>
+  </div>
+</main>
+
+<script type="module">
+  import { aurora, presets } from './src/index.js';
+
+  let opts = { curtains: 16, hue: [85, 165], thickness: 0.6, speed: 1, blur: 1.5, tilt: 22, dither: true };
+  let bg = aurora(document.body, opts);
+
+  const $ = (id) => document.getElementById(id);
+  const live = (patch) => { Object.assign(opts, patch); bg.set(patch); };
+  const restart = (patch) => { Object.assign(opts, patch); bg.stop(); bg = aurora(document.body, opts); };
+
+  $('speed').oninput     = (e) => live({ speed: +e.target.value });
+  $('tilt').oninput      = (e) => live({ tilt: +e.target.value });
+  $('thickness').oninput = (e) => live({ thickness: +e.target.value });
+  $('blur').oninput      = (e) => live({ blur: +e.target.value });
+  $('huelo').oninput     = (e) => live({ hue: [+e.target.value, opts.hue[1]] });
+  $('huehi').oninput     = (e) => live({ hue: [opts.hue[0], +e.target.value] });
+  $('dither').onchange   = (e) => live({ dither: e.target.checked });
+  $('curtains').oninput  = (e) => restart({ curtains: +e.target.value });   // count is baked into the shader
+
+  document.querySelectorAll('.presets button').forEach((b) =>
+    b.onclick = () => {
+      const p = presets[b.dataset.p];
+      restart({ ...p });
+      if (p.hue) { $('huelo').value = p.hue[0]; $('huehi').value = p.hue[1]; }
+      if (p.tilt != null) $('tilt').value = p.tilt;
+      if (p.thickness != null) $('thickness').value = p.thickness;
+    });
+</script>
+</body>
+</html>

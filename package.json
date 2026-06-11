@@ -1,0 +1,47 @@
+{
+  "name": "coaurora",
+  "version": "0.1.0",
+  "description": "A WebGL aurora background that is, internally, a Store comonad. Zero dependencies.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "types": "coaurora.d.ts",
+  "exports": {
+    ".": {
+      "types": "./coaurora.d.ts",
+      "import": "./src/index.js"
+    }
+  },
+  "files": [
+    "src",
+    "coaurora.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "demo": "python3 -m http.server 8080"
+  },
+  "keywords": [
+    "webgl",
+    "aurora",
+    "background",
+    "comonad",
+    "store-comonad",
+    "shader",
+    "functional-programming",
+    "dithering",
+    "blue-noise",
+    "canvas"
+  ],
+  "author": "Arseniy Seroka (jagajaga) <ars.seroka@gmail.com> (https://jagajaga.me)",
+  "license": "MIT",
+  "homepage": "https://jagajaga.github.io/coaurora/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jagajaga/coaurora.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jagajaga/coaurora/issues"
+  }
+}
