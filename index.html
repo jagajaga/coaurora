@@ -35,11 +35,23 @@
     background:var(--acc); color:#04140a; border:0; border-radius:6px; padding:.42rem; }
   .copy:hover { filter:brightness(1.08); }
   .copy.ok { background:#15160f; color:var(--acc); border:1px solid var(--acc); }
+
+  /* on small screens the panel folds away behind a toggle */
+  .toggle { display:none; position:fixed; top:1rem; right:1rem; z-index:6; cursor:pointer;
+    font:inherit; font-size:13px; background:rgba(8,10,8,.72); backdrop-filter:blur(8px);
+    color:var(--acc); border:1px solid #20241c; border-radius:10px; padding:.5rem .8rem; }
+  @media (max-width: 720px) {
+    .toggle { display:block; }
+    .panel { display:none; top:3.6rem; }
+    .panel.open { display:block; }
+  }
 </style>
 </head>
 <body>
 
-<aside class="panel">
+<button id="toggle" class="toggle" aria-expanded="false" aria-controls="panel">☰ settings</button>
+
+<aside id="panel" class="panel">
   <h2>coaurora</h2>
   <div class="row"><label>speed</label>     <input id="speed"     type="range" min="0"  max="3"   step="0.05" value="1"></div>
   <div class="row"><label>tilt</label>      <input id="tilt"      type="range" min="-45" max="45"  step="1"    value="22"></div>
@@ -106,6 +118,13 @@ aurora()                       <span class="c">// this page, right now</span>
       if (p.tilt != null) $('tilt').value = p.tilt;
       if (p.thickness != null) $('thickness').value = p.thickness;
     });
+
+  // Mobile: fold the panel behind the toggle.
+  $('toggle').onclick = () => {
+    const open = $('panel').classList.toggle('open');
+    $('toggle').setAttribute('aria-expanded', open);
+    $('toggle').textContent = open ? '✕ close' : '☰ settings';
+  };
 
   // Copy the current settings as a ready-to-paste coaurora call.
   $('copy').onclick = async () => {
