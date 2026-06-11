@@ -6,7 +6,7 @@
 
 Zero dependencies · ~6 KB · WebGL2 two-pass renderer with a Canvas-2D fallback · band-free on any display.
 
-[**Live demo →**](https://jagajaga.github.io/coaurora/)
+[**Live demo →**](https://jagajaga.me/coaurora/)
 
 </div>
 
