@@ -1,0 +1,67 @@
+name: screensaver
+
+on:
+  push:
+    branches: [screensaver]
+    tags: ['saver-v*']
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: macOS .saver
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build
+        run: make -C screensaver/macos build
+      - name: Zip bundle
+        run: ditto -c -k --keepParent screensaver/macos/Coaurora.saver Coaurora.saver.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-saver
+          path: Coaurora.saver.zip
+
+  windows:
+    name: Windows .scr
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install MinGW cross-compiler
+        run: sudo apt-get update && sudo apt-get install -y gcc-mingw-w64-x86-64
+      - name: Build
+        run: make -C screensaver/windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-scr
+          path: screensaver/windows/Coaurora.scr
+
+  release:
+    name: GitHub Release
+    if: startsWith(github.ref, 'refs/tags/saver-v')
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+          path: dist
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: Screensaver ${{ github.ref_name }}
+          body: |
+            The coaurora aurora as a desktop screensaver.
+
+            - **macOS** — `Coaurora.saver.zip`: unzip, double-click `Coaurora.saver`
+              (or drop it into `~/Library/Screen Savers/`). Renders at 16-bit float
+              with an extended-sRGB colorspace — a true 10-bit+ path on capable displays.
+              First launch of an unsigned saver: right-click → Open, or allow it under
+              Privacy & Security.
+            - **Windows** — `Coaurora.scr`: right-click → Install. OpenGL, the web
+              version's shader verbatim, temporal TPDF dither for band-free gradients.
+
+            Built from the `screensaver` branch by CI.
+          files: |
+            dist/Coaurora.saver.zip
+            dist/Coaurora.scr
