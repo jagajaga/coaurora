@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'me.jagajaga.coaurora'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "me.jagajaga.coaurora"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "0.1.0"
+    }
+
+    // Sideload-only key, committed on purpose so updates install over each
+    // other. NOT a Play Store key — the password being public is fine here.
+    signingConfigs {
+        release {
+            storeFile rootProject.file("keystore.p12")
+            storeType "PKCS12"
+            storePassword "coaurora"
+            keyAlias "coaurora"
+            keyPassword "coaurora"
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.release
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+    kotlinOptions { jvmTarget = '17' }
+}
+
+// zero dependencies — pure framework APIs, on brand
