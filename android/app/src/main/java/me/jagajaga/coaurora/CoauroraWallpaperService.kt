@@ -26,6 +26,7 @@ object Prefs {
     fun speed(p: SharedPreferences)     = p.getInt("speed", 100) / 100f          // 0..3
     fun tilt(p: SharedPreferences)      = p.getInt("tilt", 67) - 45f             // -45..45 deg
     fun thickness(p: SharedPreferences) = p.getInt("thickness", 60) / 100f       // 0.2..1.6
+    fun brightness(p: SharedPreferences)= p.getInt("brightness", 100) / 100f     // 0..2.5
     fun hueLo(p: SharedPreferences)     = p.getInt("hueLo", 85).toFloat()
     fun hueHi(p: SharedPreferences)     = p.getInt("hueHi", 165).toFloat()
     fun curtains(p: SharedPreferences)  = p.getInt("curtains", 16)               // 3..28
@@ -37,6 +38,7 @@ class AuroraRenderer(private val ctx: Context) : GLSurfaceView.Renderer {
     @Volatile var speed = 1f
     @Volatile var tiltDeg = 22f
     @Volatile var thickness = 0.6f
+    @Volatile var brightness = 1f
     @Volatile var hueLo = 85f
     @Volatile var hueHi = 165f
     @Volatile var curtains = 16
@@ -52,6 +54,7 @@ class AuroraRenderer(private val ctx: Context) : GLSurfaceView.Renderer {
 
     fun loadPrefs(p: SharedPreferences) {
         speed = Prefs.speed(p); tiltDeg = Prefs.tilt(p); thickness = Prefs.thickness(p)
+        brightness = Prefs.brightness(p)
         hueLo = Prefs.hueLo(p); hueHi = Prefs.hueHi(p); curtains = Prefs.curtains(p)
     }
 
@@ -64,7 +67,7 @@ class AuroraRenderer(private val ctx: Context) : GLSurfaceView.Renderer {
     private fun fragmentSrc(count: Int) = """
         precision highp float;
         uniform vec2  uRes;
-        uniform float uT, uCos, uSin, uThick, uHueC, uHueA;
+        uniform float uT, uCos, uSin, uThick, uHueC, uHueA, uBright;
         float hashf(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
         vec3 hsl(float h, float s, float l) {
           vec3 r = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
@@ -88,7 +91,7 @@ class AuroraRenderer(private val ctx: Context) : GLSurfaceView.Renderer {
             float g  = exp(-(p.x - cx) * (p.x - cx) / (2.0 * r * r));
             float hue  = uHueC + uHueA * sin(T * 0.35 + fi * 2.0 + p.y * 2.5);
             float fold = 0.5 + 0.5 * sin(p.y * 7.0 - T * 1.3 + fi * 4.0);
-            float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g;
+            float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g * uBright;
             col += hsl(hue / 360.0, 0.9, 0.6) * a;
           }
           float grey = dot(col, vec3(0.2126, 0.7152, 0.0722));
@@ -139,6 +142,7 @@ class AuroraRenderer(private val ctx: Context) : GLSurfaceView.Renderer {
         GLES20.glUniform1f(u("uCos"), Math.cos(rad).toFloat())
         GLES20.glUniform1f(u("uSin"), Math.sin(rad).toFloat())
         GLES20.glUniform1f(u("uThick"), thickness)
+        GLES20.glUniform1f(u("uBright"), brightness)
         GLES20.glUniform1f(u("uHueC"), (hueLo + hueHi) / 2f)
         GLES20.glUniform1f(u("uHueA"), (hueHi - hueLo) / 2f)
         GLES20.glEnableVertexAttribArray(0)

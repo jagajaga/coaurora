@@ -72,6 +72,7 @@ class SettingsActivity : Activity() {
         slider("speed",     "speed",     0,  300, 100) { "${it / 100f}×" }
         slider("tilt",      "tilt",      0,  90,  67)  { "${it - 45}°" }
         slider("thickness", "thickness", 20, 160, 60)  { "${it / 100f}" }
+        slider("brightness","brightness",0,  250, 100) { "${it / 100f}×" }
         slider("hue low",   "hueLo",     0,  360, 85)  { "$it°" }
         slider("hue high",  "hueHi",     0,  360, 165) { "$it°" }
         slider("curtains",  "curtains",  3,  28,  16)  { "$it" }

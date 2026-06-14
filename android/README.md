@@ -2,7 +2,7 @@
 
 The Store-comonad aurora as a live wallpaper for the **home and lock screen**
 (Samsung One UI and stock Android), with a settings screen whose sliders apply
-**live**: speed, tilt, thickness, hue band, curtain count, fps.
+**live**: speed, tilt, thickness, brightness, hue band, curtain count, fps.
 
 Prebuilt APKs land on the
 [releases page](https://github.com/jagajaga/coaurora/releases) — CI builds them
