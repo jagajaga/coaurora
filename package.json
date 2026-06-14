@@ -1,6 +1,6 @@
 {
   "name": "coaurora",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A WebGL aurora background that is, internally, a Store comonad. Zero dependencies.",
   "type": "module",
   "main": "src/index.js",
