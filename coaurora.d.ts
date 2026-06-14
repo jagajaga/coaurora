@@ -5,6 +5,8 @@ export interface AuroraOptions {
   hue?: [number, number];
   /** Curtain width. Default 0.6. */
   thickness?: number;
+  /** Line brightness — scales each curtain's contribution; the floor is unaffected. `1` is default; `0` hides the lines. */
+  brightness?: number;
   /** Animation speed multiplier. Default 1. */
   speed?: number;
   /** Comonadic 3×3 blur radius, in texels. `0` disables it. Default 1.5. */

@@ -13,6 +13,7 @@ export const DEFAULTS = {
   curtains: 16,            // number of curtain bands (changing this restarts)
   hue: [85, 165],          // colour band [low, high] in degrees — default green -> teal
   thickness: 0.6,          // curtain width
+  brightness: 1,           // line brightness (scales each curtain's contribution; floor unaffected)
   speed: 1,                // animation speed multiplier
   blur: 1.5,               // comonadic 3x3 neighbourhood radius, in texels (0 = off)
   tilt: 22,                // degrees clockwise

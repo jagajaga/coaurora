@@ -56,6 +56,7 @@
   <div class="row"><label>speed</label>     <input id="speed"     type="range" min="0"  max="3"   step="0.05" value="1"></div>
   <div class="row"><label>tilt</label>      <input id="tilt"      type="range" min="-45" max="45"  step="1"    value="22"></div>
   <div class="row"><label>thickness</label> <input id="thickness" type="range" min="0.2" max="1.6" step="0.05" value="0.6"></div>
+  <div class="row"><label>brightness</label><input id="brightness" type="range" min="0"   max="2.5" step="0.05" value="1"></div>
   <div class="row"><label>blur</label>      <input id="blur"      type="range" min="0"  max="4"   step="0.25" value="1.5"></div>
   <div class="row"><label>hue lo</label>    <input id="huelo"     type="range" min="0"  max="360" step="1"    value="85"></div>
   <div class="row"><label>hue hi</label>    <input id="huehi"     type="range" min="0"  max="360" step="1"    value="165"></div>
@@ -94,7 +95,7 @@ aurora()                       <span class="c">// this page, right now</span>
 <script type="module">
   import { aurora, presets } from './src/index.js';
 
-  let opts = { curtains: 16, hue: [85, 165], thickness: 0.6, speed: 1, blur: 1.5, tilt: 22, dither: true };
+  let opts = { curtains: 16, hue: [85, 165], thickness: 0.6, brightness: 1, speed: 1, blur: 1.5, tilt: 22, dither: true };
   let bg = aurora(document.body, opts);
 
   const $ = (id) => document.getElementById(id);
@@ -104,6 +105,7 @@ aurora()                       <span class="c">// this page, right now</span>
   $('speed').oninput     = (e) => live({ speed: +e.target.value });
   $('tilt').oninput      = (e) => live({ tilt: +e.target.value });
   $('thickness').oninput = (e) => live({ thickness: +e.target.value });
+  $('brightness').oninput= (e) => live({ brightness: +e.target.value });
   $('blur').oninput      = (e) => live({ blur: +e.target.value });
   $('huelo').oninput     = (e) => live({ hue: [+e.target.value, opts.hue[1]] });
   $('huehi').oninput     = (e) => live({ hue: [opts.hue[0], +e.target.value] });
@@ -117,6 +119,7 @@ aurora()                       <span class="c">// this page, right now</span>
       if (p.hue) { $('huelo').value = p.hue[0]; $('huehi').value = p.hue[1]; }
       if (p.tilt != null) $('tilt').value = p.tilt;
       if (p.thickness != null) $('thickness').value = p.thickness;
+      if (p.brightness != null) $('brightness').value = p.brightness;
     });
 
   // Mobile: fold the panel behind the toggle.
@@ -136,6 +139,7 @@ aurora({
   curtains: ${o.curtains},
   hue: [${o.hue[0]}, ${o.hue[1]}],
   thickness: ${o.thickness},
+  brightness: ${o.brightness},
   speed: ${o.speed},
   blur: ${o.blur},
   tilt: ${o.tilt},

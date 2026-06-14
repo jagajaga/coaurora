@@ -44,6 +44,7 @@ aurora('#bg', {
   curtains: 16,          // number of curtain bands
   hue:      [85, 165],   // colour band [low, high] in degrees — green → teal
   thickness:0.6,
+  brightness:1,          // line brightness — scales the curtains; the floor is untouched
   speed:    1,
   blur:     1.5,         // the comonadic 3×3 neighbourhood radius (0 = off)
   tilt:     22,          // degrees

@@ -24,6 +24,7 @@ uniform float uT;
 uniform vec3  uFloor;            // lifted black floor (no dark-end cliff)
 uniform float uHueC, uHueA;      // hue centre & amplitude (the colour band)
 uniform float uThick;            // curtain thickness
+uniform float uBright;           // line brightness (scales each curtain's contribution)
 
 float hash(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }
 vec3 hsl(float h, float s, float l) {
@@ -47,7 +48,7 @@ vec3 curtains(vec2 uv, float T) {
     float gauss = exp(-(uv.x - cx) * (uv.x - cx) / (2.0 * r * r));
     float hue   = uHueC + uHueA * sin(T * 0.35 + fi * 2.0 + uv.y * 2.5);
     float fold  = 0.5 + 0.5 * sin(uv.y * 7.0 - T * 1.3 + fi * 4.0);
-    float a     = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * gauss;
+    float a     = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * gauss * uBright;
     col += hsl(hue / 360.0, 0.9, 0.6) * a;
   }
   return col;

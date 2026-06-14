@@ -28,7 +28,7 @@ export function curtainAt(uv, T, opts, hueC, hueA) {
     const cx = bx + am * Math.sin(uv[1] * fr + ph) + am * 0.22 * Math.sin(uv[1] * fr * 1.7 - T * 0.7 + fi * 3.1);
     const gauss = Math.exp(-(uv[0] - cx) * (uv[0] - cx) / (2 * r * r));
     const fold = 0.5 + 0.5 * Math.sin(uv[1] * 7 - T * 1.3 + fi * 4);
-    const a = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * gauss;
+    const a = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * gauss * opts.brightness;
     const rgb = hslRGB((hueC + hueA * Math.sin(T * 0.35 + fi * 2 + uv[1] * 2.5)) / 360, 0.9, 0.6);
     col[0] += rgb[0] * a; col[1] += rgb[1] * a; col[2] += rgb[2] * a;
   }

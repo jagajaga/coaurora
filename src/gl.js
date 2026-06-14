@@ -55,7 +55,7 @@ export function runGL(canvas, opts, env) {
   addEventListener('resize', resize);
 
   const u = (p, n) => gl.getUniformLocation(p, n);
-  const c = { res: u(pCurt, 'uRes'), t: u(pCurt, 'uT'), floor: u(pCurt, 'uFloor'), hueC: u(pCurt, 'uHueC'), hueA: u(pCurt, 'uHueA'), thick: u(pCurt, 'uThick') };
+  const c = { res: u(pCurt, 'uRes'), t: u(pCurt, 'uT'), floor: u(pCurt, 'uFloor'), hueC: u(pCurt, 'uHueC'), hueA: u(pCurt, 'uHueA'), thick: u(pCurt, 'uThick'), bright: u(pCurt, 'uBright') };
   const o = { res: u(pComp, 'uRes'), t: u(pComp, 'uT'), field: u(pComp, 'uField'), blur: u(pComp, 'uBlur'), dither: u(pComp, 'uDither') };
 
   let last = 0, raf = 0, stopped = false;
@@ -71,6 +71,7 @@ export function runGL(canvas, opts, env) {
     gl.uniform2f(c.res, W, H); gl.uniform1f(c.t, T);
     gl.uniform3f(c.floor, fl[0], fl[1], fl[2]);
     gl.uniform1f(c.hueC, hc); gl.uniform1f(c.hueA, ha); gl.uniform1f(c.thick, opts.thickness);
+    gl.uniform1f(c.bright, opts.brightness);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
 
     gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, W, H);          // pass 2: extend blur, then extend dither
