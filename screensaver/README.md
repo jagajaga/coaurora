@@ -11,6 +11,11 @@ from this branch whenever a `saver-v*` tag is pushed).
 | Shader | MSL port | the web GLSL, near-verbatim |
 | Bit depth | **rgba16Float + extended sRGB → true 10-bit+** on capable panels | 8-bit + temporal TPDF dither (band-free) |
 | Build | `make install` (CLT only, no Xcode app) | `make` (MinGW, cross-compiles from Linux) |
+| Settings | **Options…** sheet → brightness slider | right-click → **Configure** → brightness trackbar |
+
+Both savers expose one setting — **line brightness** (0 hides the curtains,
+1 is the default, up to 2.5×). macOS persists it in the saver's
+`ScreenSaverDefaults` domain; Windows in `HKCU\Software\coaurora`.
 
 ## macOS
 

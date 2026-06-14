@@ -11,6 +11,7 @@ import ScreenSaver
 import Metal
 import MetalKit
 import QuartzCore
+import AppKit
 
 private let shaderSource = """
 #include <metal_stdlib>
@@ -37,8 +38,9 @@ float3 hsl2rgb(float h, float s, float l) {
 // focus, and the GPU running it everywhere is `extend`.
 //   picture = extract . extend dither . extend curtains $ positions
 fragment float4 coauroraFragment(VOut in [[stage_in]],
-                                 constant float2 &res  [[buffer(0)]],
-                                 constant float  &time [[buffer(1)]]) {
+                                 constant float2 &res    [[buffer(0)]],
+                                 constant float  &time   [[buffer(1)]],
+                                 constant float  &bright [[buffer(2)]]) {
     float2 uv = in.pos.xy / res;
 
     // tilt: 22° clockwise, baked into pattern space (cos 22° = .9272, sin 22° = .3746)
@@ -64,7 +66,7 @@ fragment float4 coauroraFragment(VOut in [[stage_in]],
         float g  = exp(-(p.x - cx) * (p.x - cx) / (2.0 * r * r));
         float hue  = 125.0 + 40.0 * sin(T * 0.35 + fi * 2.0 + p.y * 2.5);
         float fold = 0.5 + 0.5 * sin(p.y * 7.0 - T * 1.3 + fi * 4.0);
-        float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g;
+        float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g * bright;
         col += hsl2rgb(hue / 360.0, 0.9, 0.6) * a;
     }
 
@@ -93,6 +95,17 @@ public final class CoauroraSaverView: ScreenSaverView, MTKViewDelegate {
     private let t0 = CACurrentMediaTime()
     private let speed: Float = 1.0          // animation speed (web units)
     private let fps = 30                    // frame cap — the aurora is slow
+
+    // line brightness — persisted in this saver's own defaults domain, edited
+    // from the standard Screen Saver "Options…" sheet.
+    private static let defaultsDomain = "me.jagajaga.coaurora.saver"
+    private static let brightnessKey  = "brightness"
+    private static func savedBrightness() -> Float {
+        guard let d = ScreenSaverDefaults(forModuleWithName: defaultsDomain) else { return 1.0 }
+        d.register(defaults: [brightnessKey: 1.0])
+        return Float(d.double(forKey: brightnessKey))
+    }
+    private var brightness = CoauroraSaverView.savedBrightness()
 
     public override init?(frame: NSRect, isPreview: Bool) {
         super.init(frame: frame, isPreview: isPreview)
@@ -138,6 +151,65 @@ public final class CoauroraSaverView: ScreenSaverView, MTKViewDelegate {
     public override func startAnimation() { super.startAnimation(); mtk?.isPaused = false }
     public override func stopAnimation()  { super.stopAnimation();  mtk?.isPaused = true  }
 
+    // ── the "Options…" sheet: a single brightness slider ────────────────────
+    private var configWindow: NSWindow?
+    private var brightnessSlider: NSSlider?
+
+    public override var hasConfigureSheet: Bool { true }
+
+    public override var configureSheet: NSWindow? {
+        if let w = configWindow { return w }
+        let w = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 340, height: 130),
+                         styleMask: [.titled], backing: .buffered, defer: true)
+        w.title = "Coaurora"
+        let v = w.contentView!
+
+        let label = NSTextField(labelWithString: "Line brightness")
+        label.frame = NSRect(x: 20, y: 92, width: 200, height: 18)
+        v.addSubview(label)
+
+        let slider = NSSlider(value: Double(brightness), minValue: 0.0, maxValue: 2.5,
+                              target: self, action: #selector(brightnessSliderMoved(_:)))
+        slider.frame = NSRect(x: 20, y: 60, width: 300, height: 20)
+        v.addSubview(slider)
+        brightnessSlider = slider
+
+        let cancel = NSButton(title: "Cancel", target: self, action: #selector(cancelConfig(_:)))
+        cancel.frame = NSRect(x: 150, y: 16, width: 80, height: 28); cancel.bezelStyle = .rounded
+        v.addSubview(cancel)
+
+        let ok = NSButton(title: "OK", target: self, action: #selector(saveConfig(_:)))
+        ok.frame = NSRect(x: 238, y: 16, width: 80, height: 28); ok.bezelStyle = .rounded
+        ok.keyEquivalent = "\r"
+        v.addSubview(ok)
+
+        configWindow = w
+        return w
+    }
+
+    @objc private func brightnessSliderMoved(_ s: NSSlider) {
+        brightness = Float(s.doubleValue)          // live preview while the sheet is open
+    }
+
+    private func endSheet() {
+        guard let w = configWindow else { return }
+        if let parent = w.sheetParent { parent.endSheet(w) } else { NSApp.stopModal() }
+    }
+
+    @objc private func saveConfig(_ sender: Any?) {
+        if let d = ScreenSaverDefaults(forModuleWithName: CoauroraSaverView.defaultsDomain) {
+            d.set(Double(brightness), forKey: CoauroraSaverView.brightnessKey)
+            d.synchronize()
+        }
+        endSheet()
+    }
+
+    @objc private func cancelConfig(_ sender: Any?) {
+        brightness = CoauroraSaverView.savedBrightness()   // revert the live preview
+        brightnessSlider?.doubleValue = Double(brightness)
+        endSheet()
+    }
+
     public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {}
 
     public func draw(in view: MTKView) {
@@ -150,10 +222,12 @@ public final class CoauroraSaverView: ScreenSaverView, MTKViewDelegate {
 
         var res = SIMD2<Float>(Float(view.drawableSize.width), Float(view.drawableSize.height))
         var t   = Float(CACurrentMediaTime() - t0) * 0.4 * speed   // web's T = ms * 0.0004
+        var b   = brightness
 
         enc.setRenderPipelineState(pipeline)
         enc.setFragmentBytes(&res, length: MemoryLayout<SIMD2<Float>>.size, index: 0)
         enc.setFragmentBytes(&t,   length: MemoryLayout<Float>.size,        index: 1)
+        enc.setFragmentBytes(&b,   length: MemoryLayout<Float>.size,        index: 2)
         enc.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 3)
         enc.endEncoding()
         cmd.present(drawable)

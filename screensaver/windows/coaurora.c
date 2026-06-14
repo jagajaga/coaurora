@@ -11,6 +11,7 @@
 
 #include <windows.h>
 #include <windowsx.h>
+#include <commctrl.h>      /* trackbar in the config dialog */
 #include <GL/gl.h>
 #include <stdlib.h>
 #include <string.h>
@@ -72,6 +73,7 @@ static const char *FRAGMENT_SRC =
 "#version 120\n"
 "uniform vec2  uRes;\n"
 "uniform float uT;\n"
+"uniform float uBright;\n"
 "float hashf(float n) { return fract(sin(n * 127.1 + 311.7) * 43758.5453); }\n"
 "vec3 hsl(float h, float s, float l) {\n"
 "  vec3 r = clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);\n"
@@ -96,7 +98,7 @@ static const char *FRAGMENT_SRC =
 "    float g  = exp(-(p.x - cx) * (p.x - cx) / (2.0 * r * r));\n"
 "    float hue  = 125.0 + 40.0 * sin(T * 0.35 + fi * 2.0 + p.y * 2.5);\n"
 "    float fold = 0.5 + 0.5 * sin(p.y * 7.0 - T * 1.3 + fi * 4.0);\n"
-"    float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g;\n"
+"    float a    = (0.11 + 0.17 * d) * (0.3 + 0.7 * fold * fold) * g * uBright;\n"
 "    col += hsl(hue / 360.0, 0.9, 0.6) * a;\n"
 "  }\n"
 "  float grey = dot(col, vec3(0.2126, 0.7152, 0.0722));\n"
@@ -114,9 +116,33 @@ static int    g_preview = 0;
 static HDC    g_dc      = NULL;
 static HGLRC  g_rc      = NULL;
 static GLuint g_prog    = 0;
-static GLint  g_uRes    = -1, g_uT = -1;
+static GLint  g_uRes    = -1, g_uT = -1, g_uBright = -1;
 static POINT  g_mouse0  = { -1, -1 };
 static DWORD  g_t0      = 0;
+static float  g_bright  = 1.0f;          /* line brightness, persisted in HKCU */
+
+/* ---- persisted setting: HKCU\Software\coaurora\brightness (DWORD percent) - */
+static float loadBrightness(void)
+{
+    HKEY  key;
+    DWORD val = 100, sz = sizeof(val), type = REG_DWORD;
+    if (RegOpenKeyExA(HKEY_CURRENT_USER, "Software\\coaurora", 0, KEY_READ, &key) == ERROR_SUCCESS) {
+        RegQueryValueExA(key, "brightness", NULL, &type, (LPBYTE)&val, &sz);
+        RegCloseKey(key);
+    }
+    if (val > 250) val = 250;
+    return (float)val / 100.0f;          /* 100 -> 1.0 */
+}
+
+static void saveBrightness(DWORD pct)
+{
+    HKEY key;
+    if (RegCreateKeyExA(HKEY_CURRENT_USER, "Software\\coaurora", 0, NULL, 0,
+                        KEY_WRITE, NULL, &key, NULL) == ERROR_SUCCESS) {
+        RegSetValueExA(key, "brightness", 0, REG_DWORD, (const BYTE *)&pct, sizeof(pct));
+        RegCloseKey(key);
+    }
+}
 
 /* ---- window proc ---------------------------------------------------------- */
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
@@ -185,9 +211,10 @@ static int initGL(HWND hwnd)
     pglGetProgramiv(g_prog, GL_LINK_STATUS, &ok);
     if (!ok) return 0;
 
-    g_uRes = pglGetUniformLocation(g_prog, "uRes");
-    g_uT   = pglGetUniformLocation(g_prog, "uT");
-    g_t0   = GetTickCount();
+    g_uRes    = pglGetUniformLocation(g_prog, "uRes");
+    g_uT      = pglGetUniformLocation(g_prog, "uT");
+    g_uBright = pglGetUniformLocation(g_prog, "uBright");
+    g_t0      = GetTickCount();
     return 1;
 }
 
@@ -203,11 +230,83 @@ static void drawFrame(HWND hwnd)
         pglUseProgram(g_prog);
         pglUniform2f(g_uRes, (GLfloat)w, (GLfloat)h);
         pglUniform1f(g_uT, (GLfloat)((GetTickCount() - g_t0) * 0.0004)); /* web's T */
+        pglUniform1f(g_uBright, (GLfloat)g_bright);
         glBegin(GL_TRIANGLES);                /* one full-screen triangle */
         glVertex2f(-1.0f, -1.0f);
         glVertex2f( 3.0f, -1.0f);
         glVertex2f(-1.0f,  3.0f);
         glEnd();
+    }
+}
+
+/* ---- config dialog: a single brightness trackbar ------------------------- */
+#define IDC_TRACK 1001
+static HWND g_cfgTrack = NULL;
+
+static LRESULT CALLBACK ConfigProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp)
+{
+    switch (msg) {
+    case WM_COMMAND:
+        if (LOWORD(wp) == IDOK) {
+            DWORD pos = (DWORD)SendMessage(g_cfgTrack, TBM_GETPOS, 0, 0);
+            saveBrightness(pos);
+            DestroyWindow(hwnd);
+        } else if (LOWORD(wp) == IDCANCEL) {
+            DestroyWindow(hwnd);
+        }
+        return 0;
+    case WM_DESTROY:
+        PostQuitMessage(0);
+        return 0;
+    }
+    return DefWindowProc(hwnd, msg, wp, lp);
+}
+
+static void runConfig(HINSTANCE hInst)
+{
+    WNDCLASSA wc;
+    HWND hwnd;
+    MSG msg;
+    int sw = GetSystemMetrics(SM_CXSCREEN), sh = GetSystemMetrics(SM_CYSCREEN);
+    INITCOMMONCONTROLSEX icc;
+
+    icc.dwSize = sizeof(icc);
+    icc.dwICC  = ICC_BAR_CLASSES;
+    InitCommonControlsEx(&icc);
+
+    memset(&wc, 0, sizeof(wc));
+    wc.lpfnWndProc   = ConfigProc;
+    wc.hInstance     = hInst;
+    wc.lpszClassName = "CoauroraConfig";
+    wc.hbrBackground = (HBRUSH)(COLOR_BTNFACE + 1);
+    wc.hCursor       = LoadCursor(NULL, IDC_ARROW);
+    if (!RegisterClassA(&wc)) return;
+
+    hwnd = CreateWindowExA(WS_EX_DLGMODALFRAME, wc.lpszClassName, "Coaurora settings",
+                           WS_CAPTION | WS_SYSMENU | WS_VISIBLE,
+                           (sw - 340) / 2, (sh - 150) / 2, 340, 150,
+                           NULL, NULL, hInst, NULL);
+    if (!hwnd) return;
+
+    CreateWindowExA(0, "STATIC", "Line brightness", WS_CHILD | WS_VISIBLE,
+                    16, 14, 200, 18, hwnd, NULL, hInst, NULL);
+
+    g_cfgTrack = CreateWindowExA(0, TRACKBAR_CLASS, "", WS_CHILD | WS_VISIBLE | TBS_HORZ,
+                                 16, 36, 300, 30, hwnd, (HMENU)IDC_TRACK, hInst, NULL);
+    SendMessage(g_cfgTrack, TBM_SETRANGE, TRUE, MAKELONG(0, 250));   /* 0..2.5x */
+    SendMessage(g_cfgTrack, TBM_SETTICFREQ, 25, 0);
+    SendMessage(g_cfgTrack, TBM_SETPOS, TRUE, (LPARAM)(int)(loadBrightness() * 100.0f));
+
+    CreateWindowExA(0, "BUTTON", "Cancel", WS_CHILD | WS_VISIBLE,
+                    148, 78, 80, 26, hwnd, (HMENU)IDCANCEL, hInst, NULL);
+    CreateWindowExA(0, "BUTTON", "OK", WS_CHILD | WS_VISIBLE | BS_DEFPUSHBUTTON,
+                    236, 78, 80, 26, hwnd, (HMENU)IDOK, hInst, NULL);
+
+    while (GetMessage(&msg, NULL, 0, 0) > 0) {
+        if (!IsDialogMessage(hwnd, &msg)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
     }
 }
 
@@ -221,6 +320,8 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmd, int show)
 
     (void)hPrev; (void)show;
 
+    g_bright = loadBrightness();          /* persisted line brightness */
+
     /* parse:  /s = run, /p <hwnd> = preview, /c or nothing = config */
     if (cmd && (strstr(cmd, "/p") || strstr(cmd, "/P"))) {
         const char *digits = cmd;
@@ -229,10 +330,7 @@ int WINAPI WinMain(HINSTANCE hInst, HINSTANCE hPrev, LPSTR cmd, int show)
         if (!parent) return 0;
         g_preview = 1;
     } else if (!cmd || !(strstr(cmd, "/s") || strstr(cmd, "/S"))) {
-        MessageBoxA(NULL,
-            "Coaurora has no settings.\n\n"
-            "A Store-comonad aurora - https://github.com/jagajaga/coaurora",
-            "Coaurora", MB_OK | MB_ICONINFORMATION);
+        runConfig(hInst);                 /* /c (or no args): the settings dialog */
         return 0;
     }
 

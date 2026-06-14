@@ -7,7 +7,7 @@
 CC = x86_64-w64-mingw32-gcc
 
 Coaurora.scr: coaurora.c
-	$(CC) -O2 -Wall -mwindows -o $@ $< -lopengl32 -lgdi32 -luser32
+	$(CC) -O2 -Wall -mwindows -o $@ $< -lopengl32 -lgdi32 -luser32 -lcomctl32 -ladvapi32
 
 clean:
 	rm -f Coaurora.scr
